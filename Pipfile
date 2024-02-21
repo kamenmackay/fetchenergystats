@@ -5,6 +5,10 @@ name = "pypi"
 
 [packages]
 black = "*"
+pandas = "*"
+oyaml = "*"
+requests = "*"
+pyarrow = "*"
 
 [dev-packages]
 
