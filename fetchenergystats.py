@@ -1,15 +1,13 @@
-
 import pandas as pd
 import argparse
 import yaml
-import json
 import logging
 from datetime import datetime
 import requests
-import pyarrow
 import os
 
 logging.basicConfig(level=logging.INFO)
+
 
 def load_credentials():
     with open("creds.yaml", "r") as file:
@@ -22,6 +20,7 @@ def save_data_to_csv(file_name_prefix, start_date, end_date, data, outputdirecto
     output_path = os.path.join(outputdirectory, file_name)
     logging.info(f"CSV output saved to {output_path}")
     return data.to_csv(output_path)
+
 
 def save_data_to_parquet(file_name_prefix, start_date, end_date, data, outputdirectory):
     file_name = f"{file_name_prefix}{start_date}-{end_date}.parquet"
@@ -72,8 +71,12 @@ def fetch_givenergy_flows(creds, start_date, end_date):
                 "data.6": "Battery_to_Grid",
             }
             unpacked_df.rename(columns=column_mapping, inplace=True)
-            unpacked_df['Total_from_Grid'] = unpacked_df['Grid_to_Home'] + unpacked_df['Grid_to_Battery']
-            unpacked_df['Total_to_Grid'] = unpacked_df['PV_to_Grid'] + unpacked_df['Battery_to_Grid']
+            unpacked_df["Total_from_Grid"] = (
+                unpacked_df["Grid_to_Home"] + unpacked_df["Grid_to_Battery"]
+            )
+            unpacked_df["Total_to_Grid"] = (
+                unpacked_df["PV_to_Grid"] + unpacked_df["Battery_to_Grid"]
+            )
             unpacked_df = unpacked_df.sort_values(by="start_time").round(4)
             logging.info(unpacked_df)
             return unpacked_df
@@ -111,7 +114,7 @@ def fetch_octo_stats(creds, start_date, end_date):
             .sort_values(by="interval_start")
             .round(4)
         )
-        output_df.set_index=('start_time')
+        output_df.set_index = "start_time"
         logging.info(f"Consumption for {outgoingMPAN}")
         return output_df
     else:
@@ -130,18 +133,9 @@ def main():
         required=True,
         help="Data source: givenergy or octopus",
     )
+    parser.add_argument("--directory", required=True, help="Output directory")
     parser.add_argument(
-        "--directory",
-        required=True,
-        help="Output directory"
-
-    )
-    parser.add_argument(
-        "--format",
-        choices=["csv", "parquet"],
-        required=True,
-        help="Output format"
-
+        "--format", choices=["csv", "parquet"], required=True, help="Output format"
     )
 
     args = parser.parse_args()
@@ -151,18 +145,25 @@ def main():
         data = fetch_givenergy_flows(creds, args.start_date, args.end_date)
         file_name_prefix = "givenergy"
         if args.format == "csv":
-            save_data_to_csv(file_name_prefix, args.start_date, args.end_date, data,outputdir)
+            save_data_to_csv(
+                file_name_prefix, args.start_date, args.end_date, data, outputdir
+            )
         else:
-            save_data_to_parquet(file_name_prefix, args.start_date, args.end_date, data, outputdir)
+            save_data_to_parquet(
+                file_name_prefix, args.start_date, args.end_date, data, outputdir
+            )
     elif args.source == "octopus":
         data = fetch_octo_stats(creds, args.start_date, args.end_date)
         file_name_prefix = "octopus"
         if args.format == "csv":
-            save_data_to_csv(file_name_prefix, args.start_date, args.end_date, data, outputdir)
+            save_data_to_csv(
+                file_name_prefix, args.start_date, args.end_date, data, outputdir
+            )
         else:
-            save_data_to_parquet(file_name_prefix, args.start_date, args.end_date, data, outputdir)
+            save_data_to_parquet(
+                file_name_prefix, args.start_date, args.end_date, data, outputdir
+            )
 
 
 if __name__ == "__main__":
     main()
-
